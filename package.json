@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/ThomasBower/skimmer-detector#readme",
   "dependencies": {
+    "mongoose": "^5.4.0",
     "node-fetch": "^2.3.0",
     "puppeteer": "^1.10.0"
   }
