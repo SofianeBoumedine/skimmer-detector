@@ -13,12 +13,16 @@ function getPopulatedInputValues() {
     })).filter(input => input.value);
 }
 
-log(getPopulatedInputValues());
+log([...document.querySelectorAll("input, textarea")]);
 
-chrome.extension.onMessage.addListener(
-    function(request, sender, sendResponse) {
-        if (request.type === "getInputValues") {
-            sendResponse(getPopulatedInputValues());
-        }
-    }
-);
+[...document.querySelectorAll("input, textarea")].forEach(input => {
+    log(input);
+    input.addEventListener('keyup', (e) => {
+        log(`adding input`);
+        log(e);
+        chrome.runtime.sendMessage({
+            type: 'sendInputValues',
+            data: getPopulatedInputValues()
+        });
+    })
+});

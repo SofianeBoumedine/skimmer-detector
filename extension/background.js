@@ -1,34 +1,36 @@
+let inputValues = {}
+
+chrome.runtime.onMessage.addListener(
+    function(request, sender) {
+        if (request.type === 'sendInputValues') {
+            inputValues[sender.tab.id] = request.data;
+        }
+    });
+
 chrome.webRequest.onBeforeRequest.addListener(
     function(info) {
-
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {type: "getInputValues"},
-                    inputs => findInputsInURL(inputs, new URL(info.url)));
-        });
-
-        return {}
+        return {cancel: findInputsInURL(inputValues[info.tabId], new URL(info.url))}
     },
     {urls: ["<all_urls>"]},
-    ["blocking", "requestBody"]
+    ["blocking"]
 );
 
 function findInputsInURL(inputs, url) {
-    url.searchParams.forEach(param => {
-        inputs.map(input => input.value).forEach(input => {
+    if (!inputs || !url) {
+        return false;
+    }
+    console.log([...url.searchParams.values()], inputs)
+    return [...url.searchParams.values()].some(param => {
+        return inputs.map(input => input.value).some(input => {
             if (isBase64Encoded(param)) {
                 const decoded = atob(param);
                 if (decoded.indexOf(input) !== -1) {
-                    console.log(`Potentially found a skimmer with input value ${input} and URL parameter ${param} (decoded to ${decoded})`);
-                    return true;
+                    return true; //console.log(`Potentially found a skimmer with input value ${input} and URL parameter ${param} (decoded to ${decoded})`);
                 }
             }
-            if (param.indexOf(input) !== -1) {
-                console.log(`Potentially found a skimmer with input value ${input} and URL parameter ${param}`);
-                return true;
-            }
+            return param.indexOf(input) !== -1;
         })
     });
-    return false;
 }
 
 function isBase64Encoded(string) {
