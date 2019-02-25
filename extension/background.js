@@ -19,7 +19,6 @@ function findInputsInURL(inputs, url) {
     if (!inputs || !url) {
         return false;
     }
-    console.log([...url.searchParams.values()], inputs)
     return [...url.searchParams.values()].some(param => {
         return inputs.map(input => input.value).some(input => {
             if (isBase64Encoded(param)) {

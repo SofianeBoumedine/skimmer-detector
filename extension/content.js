@@ -13,16 +13,9 @@ function getPopulatedInputValues() {
     })).filter(input => input.value);
 }
 
-log([...document.querySelectorAll("input, textarea")]);
-
-[...document.querySelectorAll("input, textarea")].forEach(input => {
-    log(input);
-    input.addEventListener('keyup', (e) => {
-        log(`adding input`);
-        log(e);
-        chrome.runtime.sendMessage({
-            type: 'sendInputValues',
-            data: getPopulatedInputValues()
-        });
-    })
+document.body.addEventListener('input', (e) => {
+    chrome.runtime.sendMessage({
+        type: 'sendInputValues',
+        data: getPopulatedInputValues()
+    });
 });
