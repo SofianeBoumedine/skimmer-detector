@@ -31,17 +31,19 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-chrome.webRequest.onBeforeRequest.addListener(
-  info => ({
+chrome.webRequest.onBeforeRequest.addListener(function (info) {
+  return {
     cancel: containsInputInURL(tabData[info.tabId].inputs.map(input => input.value),
       new URL(info.url)),
-  }),
-  { urls: ['<all_urls>'],
-    types: ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"],
-  },
-  ['blocking'],
-);
+  };
+},
+{
+  urls: ['<all_urls>'],
+  types: ['sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping',
+    'media', 'websocket', 'other'],
+},
+['blocking']);
 
 // Update tab dictionary on creation & destruction
-chrome.tabs.onCreated.addListener(({id}) => tabData[id] = { inputs: [] });
-chrome.tabs.onRemoved.addListener((tabId) => delete tabData[tabId]);
+chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [] }; });
+chrome.tabs.onRemoved.addListener(tabId => delete tabData[tabId]);

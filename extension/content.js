@@ -21,4 +21,4 @@ function sendInputValues() {
 document.body.addEventListener('input', () => sendInputValues());
 
 // On page load, send new data
-sendInputValues()
+sendInputValues();
