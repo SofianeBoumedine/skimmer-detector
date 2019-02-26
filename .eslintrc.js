@@ -5,6 +5,7 @@ module.exports = {
   },
   extends: 'airbnb-base',
   globals: {
+    chrome: 'readonly',
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
   },
@@ -13,5 +14,6 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    "no-unused-vars": ["error", { "varsIgnorePattern": "log" }],
   },
 };
