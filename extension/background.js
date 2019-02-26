@@ -16,21 +16,32 @@ function containsInputInURL(inputVals, url) {
   }));
 }
 
-const inputs = {};
+/* tabId: {
+ *   inputs: [{id, name, value}]
+ * }
+ */
+const tabData = {};
 
 chrome.runtime.onMessage.addListener(
   (request, sender) => {
     if (request.type === 'sendInputValues') {
-      inputs[sender.tab.id] = request.data;
+      tabData[sender.tab.id].inputs = request.data;
+      console.log(tabData);
     }
   },
 );
 
 chrome.webRequest.onBeforeRequest.addListener(
   info => ({
-    cancel: containsInputInURL(inputs[info.tabId].map(input => input.value),
+    cancel: containsInputInURL(tabData[info.tabId].inputs.map(input => input.value),
       new URL(info.url)),
   }),
-  { urls: ['<all_urls>'] },
+  { urls: ['<all_urls>'],
+    types: ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"],
+  },
   ['blocking'],
 );
+
+// Update tab dictionary on creation & destruction
+chrome.tabs.onCreated.addListener(({id}) => tabData[id] = { inputs: [] });
+chrome.tabs.onRemoved.addListener((tabId) => delete tabData[tabId]);

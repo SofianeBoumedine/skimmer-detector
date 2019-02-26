@@ -11,9 +11,14 @@ function getPopulatedInputValues() {
   })).filter(input => input.value);
 }
 
-document.body.addEventListener('input', () => {
+function sendInputValues() {
   chrome.runtime.sendMessage({
     type: 'sendInputValues',
     data: getPopulatedInputValues(),
   });
-});
+}
+
+document.body.addEventListener('input', () => sendInputValues());
+
+// On page load, send new data
+sendInputValues()
