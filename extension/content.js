@@ -11,7 +11,7 @@ function getPopulatedInputValues() {
   })).filter(input => input.value);
 }
 
-document.body.addEventListener('input', (e) => {
+document.body.addEventListener('input', () => {
   chrome.runtime.sendMessage({
     type: 'sendInputValues',
     data: getPopulatedInputValues(),
