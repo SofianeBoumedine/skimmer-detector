@@ -9,22 +9,21 @@ chrome.runtime.onMessage.addListener(
 
 chrome.webRequest.onBeforeRequest.addListener(
     function(info) {
-        return {cancel: findInputsInURL(inputValues[info.tabId], new URL(info.url))}
+        return {cancel: containsInputInURL(inputValues[info.tabId], new URL(info.url))}
     },
     {urls: ["<all_urls>"]},
     ["blocking"]
 );
 
-function findInputsInURL(inputs, url) {
+function containsInputInURL(inputs, url) {
     if (!inputs || !url) {
         return false;
     }
     return [...url.searchParams.values()].some(param => {
         return inputs.map(input => input.value).some(input => {
             if (isBase64Encoded(param)) {
-                const decoded = atob(param);
-                if (decoded.indexOf(input) !== -1) {
-                    return true; //console.log(`Potentially found a skimmer with input value ${input} and URL parameter ${param} (decoded to ${decoded})`);
+                if (atob(param).indexOf(input) !== -1) {
+                    return true;
                 }
             }
             return param.indexOf(input) !== -1;
