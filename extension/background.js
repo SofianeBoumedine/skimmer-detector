@@ -2,18 +2,34 @@ function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
 
-function containsInputInURL(inputVals, url) {
-  if (!inputVals || !url) {
+function atLeastOneNeedleInHaystack(needles, haystack) {
+  if (!needles || !haystack) {
     return false;
   }
-  return [...url.searchParams.values()].some(param => inputVals.some((input) => {
-    if (isBase64Encoded(param)) {
-      if (atob(param).indexOf(input) !== -1) {
+  return haystack.some(haystackElem => needles.some((needle) => {
+    if (isBase64Encoded(haystackElem)) {
+      if (atob(haystackElem).indexOf(needle) !== -1) {
         return true;
       }
     }
-    return param.indexOf(input) !== -1;
+    return haystackElem.indexOf(needle) !== -1;
   }));
+}
+
+function containsInputInURL(inputs, url) {
+  return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
+    [...new URL(url).searchParams.values()]);
+}
+
+function containsInputsInPostData(inputs, requestBody) {
+  let payload = [];
+  if (requestBody.raw) {
+    payload.append(decodeURIComponent(String.fromCharCode.apply(null,
+      new Uint8Array(requestBody.raw[0].bytes))));
+  } else { // formData
+    payload = Object.values(requestBody.formData).flat();
+  }
+  return atLeastOneNeedleInHaystack(inputs.map(input => input.value), payload);
 }
 
 /* tabId: {
@@ -26,23 +42,24 @@ chrome.runtime.onMessage.addListener(
   (request, sender) => {
     if (request.type === 'sendInputValues') {
       tabData[sender.tab.id].inputs = request.data;
-      console.log(tabData);
     }
   },
 );
 
-chrome.webRequest.onBeforeRequest.addListener(function (info) {
-  return {
-    cancel: containsInputInURL(tabData[info.tabId].inputs.map(input => input.value),
-      new URL(info.url)),
-  };
+chrome.webRequest.onBeforeRequest.addListener((data) => {
+  let shouldCancel = containsInputInURL(tabData[data.tabId].inputs, data.url);
+  if (data.requestBody) {
+    shouldCancel = shouldCancel || containsInputsInPostData(tabData[data.tabId].inputs,
+      data.requestBody);
+  }
+  return { cancel: shouldCancel };
 },
 {
   urls: ['<all_urls>'],
   types: ['sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping',
     'media', 'websocket', 'other'],
 },
-['blocking']);
+['blocking', 'requestBody']);
 
 // Update tab dictionary on creation & destruction
 chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [] }; });
