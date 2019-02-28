@@ -2,11 +2,19 @@ function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
 
-function atLeastOneNeedleInHaystack(needles, haystack) {
-  if (!needles || !haystack) {
+/**
+ * Determines whether one or more elements in needles are present in any of the haystacks.
+ * Checks both raw input and base64 encoded versions of the needles.
+ * @param needles The array of needles needed to be checked.
+ * @param haystacks The array of haystacks in which the needle(s) may reside.
+ * @returns {boolean} Whether one or more needles were found in one or more haystacks in either
+ * raw or base64 encoded form.
+ */
+function atLeastOneNeedleInHaystack(needles, haystacks) {
+  if (!needles || !haystacks) {
     return false;
   }
-  return haystack.some(haystackElem => needles.some((needle) => {
+  return haystacks.some(haystackElem => needles.some((needle) => {
     if (isBase64Encoded(haystackElem)) {
       if (atob(haystackElem).indexOf(needle) !== -1) {
         return true;
@@ -16,7 +24,7 @@ function atLeastOneNeedleInHaystack(needles, haystack) {
   }));
 }
 
-function containsInputInURL(inputs, url) {
+function containsInputsInURL(inputs, url) {
   return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
     [...new URL(url).searchParams.values()]);
 }
@@ -33,24 +41,35 @@ function containsInputsInPostData(inputs, requestBody) {
 }
 
 /* tabId: {
- *   inputs: [{id, name, value}]
+ *   inputs: [{id: number, name: string, value: string}]
+ *   url: string
  * }
  */
 const tabData = {};
 
 chrome.runtime.onMessage.addListener(
   (request, sender) => {
-    if (request.type === 'sendInputValues') {
-      tabData[sender.tab.id].inputs = request.data;
+    switch (request.type) {
+      case 'sendInputValues':
+        tabData[sender.tab.id].inputs = request.data;
+        break;
+      case 'sendURL':
+        tabData[sender.tab.id].url = request.data;
+        break;
+      default:
+        console.log('Unknown message.');
     }
   },
 );
 
-chrome.webRequest.onBeforeRequest.addListener((data) => {
-  let shouldCancel = containsInputInURL(tabData[data.tabId].inputs, data.url);
-  if (data.requestBody) {
-    shouldCancel = shouldCancel || containsInputsInPostData(tabData[data.tabId].inputs,
-      data.requestBody);
+chrome.webRequest.onBeforeRequest.addListener((details) => {
+  if (new URL(details.url).hostname === new URL(tabData[details.tabId].url).hostname) {
+    return { cancel: false };
+  }
+  let shouldCancel = containsInputsInURL(tabData[details.tabId].inputs, details.url);
+  if (details.requestBody) {
+    shouldCancel = shouldCancel || containsInputsInPostData(tabData[details.tabId].inputs,
+      details.requestBody);
   }
   return { cancel: shouldCancel };
 },
@@ -62,5 +81,5 @@ chrome.webRequest.onBeforeRequest.addListener((data) => {
 ['blocking', 'requestBody']);
 
 // Update tab dictionary on creation & destruction
-chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [] }; });
+chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [], url: '' }; });
 chrome.tabs.onRemoved.addListener(tabId => delete tabData[tabId]);

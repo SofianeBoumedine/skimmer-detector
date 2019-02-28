@@ -18,7 +18,15 @@ function sendInputValues() {
   });
 }
 
+function sendURL() {
+  chrome.runtime.sendMessage({
+    type: 'sendURL',
+    data: window.location.href,
+  });
+}
+
 document.body.addEventListener('input', () => sendInputValues());
 
 // On page load, send new data
 sendInputValues();
+sendURL();
