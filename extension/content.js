@@ -8,7 +8,7 @@ function getPopulatedInputValues() {
     id: input.id || '',
     name: input.name || '',
     value: input.value || '',
-  })).filter(input => input.value);
+  }));
 }
 
 function sendInputValues() {

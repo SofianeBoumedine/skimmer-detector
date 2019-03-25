@@ -1,3 +1,5 @@
+const MIN_INPUT_SIZE = 3;
+
 function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
@@ -51,7 +53,8 @@ chrome.runtime.onMessage.addListener(
   (request, sender) => {
     switch (request.type) {
       case 'sendInputValues':
-        tabData[sender.tab.id].inputs = request.data;
+        tabData[sender.tab.id].inputs = request.data
+          .filter(input => input.value.length > MIN_INPUT_SIZE);
         break;
       case 'sendURL':
         tabData[sender.tab.id].url = request.data;
