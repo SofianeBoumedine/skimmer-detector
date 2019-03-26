@@ -1,6 +1,5 @@
-function log(message, logType = 'log') {
-  if (logType !== 'log' && logType !== 'error' && logType !== 'info' && logType !== 'warn') return;
-  console[logType]('[SkimmerDetector] ', message);
+function log(...messages) {
+  console.log('[SkimmerDetector] ', ...messages);
 }
 
 function getPopulatedInputValues() {
@@ -25,8 +24,28 @@ function sendURL() {
   });
 }
 
+function sendScriptContent(src, content) {
+  chrome.runtime.sendMessage({
+    type: 'sendScriptContent',
+    data: { src, content },
+  });
+}
+
 document.body.addEventListener('input', () => sendInputValues());
 
 // On page load, send new data
 sendInputValues();
 sendURL();
+
+[...document.scripts].filter(({ src }) => src !== '').forEach(({ src }) => {
+  const xhr = new XMLHttpRequest();
+  xhr.open('get', src, true);
+  xhr.send();
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState === this.DONE) {
+      log('in here for ', src);
+      sendScriptContent(src, xhr.response);
+    }
+  };
+});

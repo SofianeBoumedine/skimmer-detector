@@ -1,5 +1,17 @@
 const MIN_INPUT_SIZE = 3;
+/* tabId: {
+ *   inputs: [{id: string, name: string, value: string}]
+ *   url: string
+ *   mismatchingScripts: [string]
+ * }
+ */
+const tabData = {};
 
+/**
+ * Attempts to identify where a string is base-64 encoded or not.
+ * @param string The raw string to be examined.
+ * @returns {boolean} Returns true if the string matches a base-64 string. False otherwise.
+ */
 function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
@@ -42,12 +54,19 @@ function containsInputsInPostData(inputs, requestBody) {
   return atLeastOneNeedleInHaystack(inputs.map(input => input.value), payload);
 }
 
-/* tabId: {
- *   inputs: [{id: number, name: string, value: string}]
- *   url: string
- * }
- */
-const tabData = {};
+function compareScriptContent(tabId, src, content) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('get', src, true);
+  xhr.send();
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState === this.DONE && content !== xhr.response) {
+      if (tabData[tabId].mismatchingScripts.indexOf(src) === -1) {
+        tabData[tabId].mismatchingScripts.push(src);
+      }
+    }
+  };
+}
 
 chrome.runtime.onMessage.addListener(
   (request, sender) => {
@@ -58,6 +77,9 @@ chrome.runtime.onMessage.addListener(
         break;
       case 'sendURL':
         tabData[sender.tab.id].url = request.data;
+        break;
+      case 'sendScriptContent':
+        compareScriptContent(sender.tab.id, request.data.src, request.data.content);
         break;
       default:
         console.log('Unknown message.');
@@ -84,5 +106,5 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
 ['blocking', 'requestBody']);
 
 // Update tab dictionary on creation & destruction
-chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [], url: '' }; });
+chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [], url: '', mismatchingScripts: [] }; });
 chrome.tabs.onRemoved.addListener(tabId => delete tabData[tabId]);
