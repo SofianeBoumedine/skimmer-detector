@@ -38,9 +38,13 @@
         {
             "all_frames": false,
             "js": [ "content.js" ],
-            "match_about_blank": false,
+            "matches": [ "<all_urls>" ]
+        },
+        {
+            "all_frames": false,
+            "js": [ "content_before.js" ],
             "matches": [ "<all_urls>" ],
-            "run_at": "document_end"
+            "run_at": "document_start"
         }
     ]
 }

@@ -44,7 +44,6 @@ sendURL();
 
   xhr.onreadystatechange = function () {
     if (this.readyState === this.DONE) {
-      log('in here for ', src);
       sendScriptContent(src, xhr.response);
     }
   };

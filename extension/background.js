@@ -81,6 +81,9 @@ chrome.runtime.onMessage.addListener(
       case 'sendScriptContent':
         compareScriptContent(sender.tab.id, request.data.src, request.data.content);
         break;
+      case 'clearScriptContent':
+        tabData[sender.tab.id].mismatchingScripts = [];
+        break;
       default:
         console.log('Unknown message.');
     }
@@ -88,6 +91,7 @@ chrome.runtime.onMessage.addListener(
 );
 
 chrome.webRequest.onBeforeRequest.addListener((details) => {
+  // Whitelist all requests going to the same hostname
   if (new URL(details.url).hostname === new URL(tabData[details.tabId].url).hostname) {
     return { cancel: false };
   }
@@ -95,6 +99,10 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
   if (details.requestBody) {
     shouldCancel = shouldCancel || containsInputsInPostData(tabData[details.tabId].inputs,
       details.requestBody);
+  }
+  if (tabData[details.tabId].mismatchingScripts.map(url => new URL(url).hostname)
+    .indexOf(new URL(details.url).hostname) !== -1) {
+    shouldCancel = true;
   }
   return { cancel: shouldCancel };
 },
