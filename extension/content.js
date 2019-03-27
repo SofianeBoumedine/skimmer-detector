@@ -31,12 +31,6 @@ function sendScriptContent(src, content) {
   });
 }
 
-document.body.addEventListener('input', () => sendInputValues());
-
-// On page load, send new data
-sendInputValues();
-sendURL();
-
 [...document.scripts].filter(({ src }) => src !== '').forEach(({ src }) => {
   const xhr = new XMLHttpRequest();
   xhr.open('get', src, true);
@@ -48,3 +42,10 @@ sendURL();
     }
   };
 });
+
+// Bind the body to send updates to any page inputs when they're modified (input events are
+// bubbled up)
+document.body.addEventListener('input', () => sendInputValues());
+// On page load, send new data
+sendInputValues();
+sendURL();
