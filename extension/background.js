@@ -7,6 +7,32 @@ const MIN_INPUT_SIZE = 3;
  */
 const tabData = {};
 
+function initTabData(tabId) {
+  tabData[tabId] = {
+    inputs: [],
+    url: '',
+    mismatchingScripts: []
+  }
+}
+
+function safeUpdateTabData(tabId, data) {
+  if (!tabData[tabId]) {
+    initTabData(tabId);
+  }
+  tabData[tabId] = {
+    ...tabData[tabId],
+    ...data,
+  };
+}
+
+function safeGetTabData(tabId, field) {
+  if (!tabData[tabId]) {
+    initTabData(tabId);
+  }
+  return tabData[tabId][field];
+}
+
+
 /**
  * Attempts to identify where a string is base-64 encoded or not.
  * @param string The raw string to be examined.
@@ -61,8 +87,10 @@ function compareScriptContent(tabId, src, content) {
 
   xhr.onreadystatechange = function () {
     if (this.readyState === this.DONE && content !== xhr.response) {
-      if (tabData[tabId].mismatchingScripts.indexOf(src) === -1) {
-        tabData[tabId].mismatchingScripts.push(src);
+      if (safeGetTabData(tabId, 'mismatchingScripts').indexOf(src) === -1) {
+        safeUpdateTabData(tabId, {
+          mismatchingScripts: safeGetTabData(tabId, 'mismatchingScripts').push(src),
+        });
       }
     }
   };
@@ -72,17 +100,18 @@ chrome.runtime.onMessage.addListener(
   (request, sender) => {
     switch (request.type) {
       case 'sendInputValues':
-        tabData[sender.tab.id].inputs = request.data
-          .filter(input => input.value.length > MIN_INPUT_SIZE);
+        safeUpdateTabData(sender.tab.id, {
+          inputs: request.data.filter(input => input.value.length > MIN_INPUT_SIZE),
+        });
         break;
       case 'sendURL':
-        tabData[sender.tab.id].url = request.data;
+        safeUpdateTabData(sender.tab.id, { url: request.data });
         break;
       case 'sendScriptContent':
         compareScriptContent(sender.tab.id, request.data.src, request.data.content);
         break;
-      case 'clearScriptContent':
-        tabData[sender.tab.id].mismatchingScripts = [];
+      case 'initTab':
+        initTabData(sender.tab.id);
         break;
       default:
         console.log('Unknown message.');
