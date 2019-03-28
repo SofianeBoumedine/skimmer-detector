@@ -32,6 +32,15 @@ function safeGetTabData(tabId, field) {
   return tabData[tabId][field];
 }
 
+function sendAnnouncement(message) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, {
+      type: 'sendAnnouncement',
+      data: message,
+    });
+  });
+}
+
 
 /**
  * Attempts to identify where a string is base-64 encoded or not.
@@ -91,7 +100,7 @@ function compareScriptContent(tabId, src, content) {
     if (this.readyState === this.DONE && content !== xhr.response) {
       if (safeGetTabData(tabId, 'mismatchingScripts').indexOf(src) === -1) {
         safeUpdateTabData(tabId, {
-          mismatchingScripts: safeGetTabData(tabId, 'mismatchingScripts').push(src),
+          mismatchingScripts: [...safeGetTabData(tabId, 'mismatchingScripts'), src],
         });
       }
     }
@@ -132,9 +141,12 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
     shouldCancel = shouldCancel || containsInputsInPostData(tabData[details.tabId].inputs,
       details.requestBody);
   }
-  if (tabData[details.tabId].mismatchingScripts.map(url => new URL(url).hostname)
+  if (safeGetTabData(details.tabId, 'mismatchingScripts').map(url => new URL(url).hostname)
     .indexOf(new URL(details.url).hostname) !== -1) {
     shouldCancel = true;
+  }
+  if (shouldCancel) {
+    sendAnnouncement('Request cancelled because user credentials were detected.');
   }
   return { cancel: shouldCancel };
 },

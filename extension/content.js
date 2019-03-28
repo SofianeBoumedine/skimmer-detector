@@ -24,6 +24,18 @@ function sendScriptContent(src, content) {
   });
 }
 
+chrome.runtime.onMessage.addListener(
+  (request) => {
+    switch (request.type) {
+      case 'sendAnnouncement':
+        alert(request.data);
+        break;
+      default:
+        console.log('Unknown message.');
+    }
+  },
+);
+
 [...document.scripts].filter(({ src }) => src !== '').forEach(({ src }) => {
   const xhr = new XMLHttpRequest();
   xhr.open('get', src, true);
