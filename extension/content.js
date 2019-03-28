@@ -17,13 +17,6 @@ function sendInputValues() {
   });
 }
 
-function sendURL() {
-  chrome.runtime.sendMessage({
-    type: 'sendURL',
-    data: window.location.href,
-  });
-}
-
 function sendScriptContent(src, content) {
   chrome.runtime.sendMessage({
     type: 'sendScriptContent',
@@ -48,4 +41,3 @@ function sendScriptContent(src, content) {
 document.body.addEventListener('input', () => sendInputValues());
 // On page load, send new data
 sendInputValues();
-sendURL();

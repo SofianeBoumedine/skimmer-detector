@@ -11,8 +11,8 @@ function initTabData(tabId) {
   tabData[tabId] = {
     inputs: [],
     url: '',
-    mismatchingScripts: []
-  }
+    mismatchingScripts: [],
+  };
 }
 
 function safeUpdateTabData(tabId, data) {
@@ -70,14 +70,16 @@ function containsInputsInURL(inputs, url) {
 }
 
 function containsInputsInPostData(inputs, requestBody) {
-  let payload = [];
   if (requestBody.raw) {
-    payload.append(decodeURIComponent(String.fromCharCode.apply(null,
-      new Uint8Array(requestBody.raw[0].bytes))));
-  } else { // formData
-    payload = Object.values(requestBody.formData).flat();
+    return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
+      decodeURIComponent(String.fromCharCode.apply(null,
+        new Uint8Array(requestBody.raw[0].bytes))));
   }
-  return atLeastOneNeedleInHaystack(inputs.map(input => input.value), payload);
+  if (requestBody.formData) {
+    return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
+      Object.values(requestBody.formData).flat());
+  }
+  return false;
 }
 
 function compareScriptContent(tabId, src, content) {
@@ -121,7 +123,8 @@ chrome.runtime.onMessage.addListener(
 
 chrome.webRequest.onBeforeRequest.addListener((details) => {
   // Whitelist all requests going to the same hostname
-  if (new URL(details.url).hostname === new URL(tabData[details.tabId].url).hostname) {
+  if (safeGetTabData(details.tabId, 'url')
+    && new URL(details.url).hostname === new URL(safeGetTabData(details.tabId, 'url')).hostname) {
     return { cancel: false };
   }
   let shouldCancel = containsInputsInURL(tabData[details.tabId].inputs, details.url);
