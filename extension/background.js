@@ -32,12 +32,10 @@ function safeGetTabData(tabId, field) {
   return tabData[tabId][field];
 }
 
-function sendAnnouncement(message) {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, {
-      type: 'sendAnnouncement',
-      data: message,
-    });
+function sendAnnouncement(tabId, message) {
+  chrome.tabs.sendMessage(tabId, {
+    type: 'sendAnnouncement',
+    data: message,
   });
 }
 
@@ -81,8 +79,8 @@ function containsInputsInURL(inputs, url) {
 function containsInputsInPostData(inputs, requestBody) {
   if (requestBody.raw) {
     return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
-      decodeURIComponent(String.fromCharCode.apply(null,
-        new Uint8Array(requestBody.raw[0].bytes))));
+      [decodeURIComponent(String.fromCharCode.apply(null,
+        new Uint8Array(requestBody.raw[0].bytes)))]);
   }
   if (requestBody.formData) {
     return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
@@ -146,7 +144,7 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
     shouldCancel = true;
   }
   if (shouldCancel) {
-    sendAnnouncement('Request cancelled because user credentials were detected.');
+    sendAnnouncement(details.tabId, 'Request cancelled because user credentials were detected.');
   }
   return { cancel: shouldCancel };
 },
