@@ -127,7 +127,7 @@ chrome.runtime.onMessage.addListener(
         initTabData(sender.tab.id);
         break;
       default:
-        console.log('Unknown message.');
+        console.log(`Unknown message: ${request.type}`);
     }
   },
 );
@@ -143,9 +143,10 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
     return { cancel: false };
   }
 
-  // getFilename(details.url).match(/jquery(?:-(\d(?:\.\d){0,3}))?(?:\.(min))?\.js/g) &&
-  // console.log(details.initiator, /jquery(?:-(\d(?:\.\d){0,3}))?(?:\.(min))?\.js/g
-  // .exec(getFilename(details.url)));
+  chrome.tabs.sendMessage(details.tabId, {
+    type: 'requestScriptContent',
+    data: { url: details.url },
+  });
 
   let shouldCancel = containsInputsInURL(tabData[details.tabId].inputs, details.url);
   if (details.requestBody) {

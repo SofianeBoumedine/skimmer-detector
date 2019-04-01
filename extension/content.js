@@ -17,13 +17,6 @@ function sendInputValues() {
   });
 }
 
-function sendScriptContent(src, content) {
-  chrome.runtime.sendMessage({
-    type: 'sendScriptContent',
-    data: { src, content },
-  });
-}
-
 let num = 0;
 
 chrome.runtime.onMessage.addListener(
@@ -34,22 +27,10 @@ chrome.runtime.onMessage.addListener(
         num += 1;
         break;
       default:
-        console.log('Unknown message.');
+        log(`Unknown message: ${request.type}`);
     }
   },
 );
-
-[...document.scripts].filter(({ src }) => src !== '').forEach(({ src }) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open('get', src, true);
-  xhr.send();
-
-  xhr.onreadystatechange = function () {
-    if (this.readyState === this.DONE) {
-      sendScriptContent(src, xhr.response);
-    }
-  };
-});
 
 // Bind the body to send updates to any page inputs when they're modified (input events are
 // bubbled up)
