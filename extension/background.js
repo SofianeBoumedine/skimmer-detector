@@ -49,6 +49,10 @@ function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
 
+// function getFilename(url) {
+//   return url.split('/').pop().split('#')[0].split('?')[0];
+// }
+
 /**
  * Determines whether one or more elements in needles are present in any of the haystacks.
  * Checks both raw input and base64 encoded versions of the needles.
@@ -129,11 +133,20 @@ chrome.runtime.onMessage.addListener(
 );
 
 chrome.webRequest.onBeforeRequest.addListener((details) => {
-  // Whitelist all requests going to the same hostname
+  // Whitelist all requests from non-tab pages or this extension
+  if (details.tabId < 0 || details.initiator === `chrome-extension://${chrome.runtime.id}`) {
+    return { cancel: false };
+  }
+  // Whitelist all requests going to the same hostname or requests from extensions
   if (safeGetTabData(details.tabId, 'url')
     && new URL(details.url).hostname === new URL(safeGetTabData(details.tabId, 'url')).hostname) {
     return { cancel: false };
   }
+
+  // getFilename(details.url).match(/jquery(?:-(\d(?:\.\d){0,3}))?(?:\.(min))?\.js/g) &&
+  // console.log(details.initiator, /jquery(?:-(\d(?:\.\d){0,3}))?(?:\.(min))?\.js/g
+  // .exec(getFilename(details.url)));
+
   let shouldCancel = containsInputsInURL(tabData[details.tabId].inputs, details.url);
   if (details.requestBody) {
     shouldCancel = shouldCancel || containsInputsInPostData(tabData[details.tabId].inputs,

@@ -30,7 +30,8 @@ chrome.runtime.onMessage.addListener(
   (request) => {
     switch (request.type) {
       case 'sendAnnouncement':
-        document.body.insertAdjacentHTML('beforeend', `<div style="position: fixed;top:${num++ * 14}px;right:0;width: 20%;background:black;color:white;font:12px sans-serif;z-index:9999;">${request.data}</div>`);
+        document.body.insertAdjacentHTML('beforeend', `<div style="position: fixed;top:${num * 14}px;right:0;width: 20%;background:black;color:white;font:12px sans-serif;z-index:9999;">${request.data}</div>`);
+        num += 1;
         break;
       default:
         console.log('Unknown message.');
