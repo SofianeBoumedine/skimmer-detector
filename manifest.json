@@ -6,10 +6,10 @@
     "description" : "Detect JavaScript Skimmers on websites.",
 
     "icons": {
-        "16": "images/get_started16.png",
-        "32": "images/get_started32.png",
-        "48": "images/get_started48.png",
-        "128": "images/get_started128.png"
+        "16": "app/images/get_started16.png",
+        "32": "app/images/get_started32.png",
+        "48": "app/images/get_started48.png",
+        "128": "app/images/get_started128.png"
     },
 
     "permissions": [
@@ -22,22 +22,26 @@
     ],
 
     "background": {
-        "scripts": ["background.js"]
+        "scripts": [
+            "dist/background.js"
+        ]
     },
 
     "browser_action": {
         "default_popup": "popup.html",
         "default_icon": {
-            "16": "images/get_started16.png",
-            "32": "images/get_started32.png",
-            "48": "images/get_started48.png",
-            "128": "images/get_started128.png"
+            "16": "app/images/get_started16.png",
+            "32": "app/images/get_started32.png",
+            "48": "app/images/get_started48.png",
+            "128": "app/images/get_started128.png"
         }
     },
     "content_scripts": [
         {
             "all_frames": false,
-            "js": [ "content.js" ],
+            "js": [
+                "dist/content.js"
+            ],
             "matches": [
                 "http://*/*",
                 "https://*/*"
@@ -45,7 +49,9 @@
         },
         {
             "all_frames": false,
-            "js": [ "content_before.js" ],
+            "js": [
+                "dist/content_before.js"
+            ],
             "matches": [
                 "http://*/*",
                 "https://*/*"

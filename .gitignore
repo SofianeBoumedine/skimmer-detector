@@ -1,2 +1,11 @@
-/node_modules
+# Build files
+dist/
+
+# Editor
 .idea
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store
