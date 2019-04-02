@@ -49,9 +49,9 @@ function isBase64Encoded(string) {
   return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
 }
 
-// function getFilename(url) {
-//   return url.split('/').pop().split('#')[0].split('?')[0];
-// }
+function getFilename(url) {
+  return url.split('/').pop().split('#')[0].split('?')[0];
+}
 
 /**
  * Determines whether one or more elements in needles are present in any of the haystacks.
@@ -99,11 +99,25 @@ function compareScriptContent(tabId, src, content) {
   xhr.send();
 
   xhr.onreadystatechange = function () {
-    if (this.readyState === this.DONE && content !== xhr.response) {
-      if (safeGetTabData(tabId, 'mismatchingScripts').indexOf(src) === -1) {
-        safeUpdateTabData(tabId, {
-          mismatchingScripts: [...safeGetTabData(tabId, 'mismatchingScripts'), src],
-        });
+    if (this.readyState === this.DONE) {
+      if (content !== xhr.response) {
+        if (safeGetTabData(tabId, 'mismatchingScripts').indexOf(src) === -1) {
+          safeUpdateTabData(tabId, {
+            mismatchingScripts: [...safeGetTabData(tabId, 'mismatchingScripts'), src],
+          });
+        }
+      }
+      const file = getFilename(src).match(/jquery(?:-(\d(?:\.\d){0,3}))?(?:\.(min))?\.js/g);
+      if (file) {
+        // const isMin = file[2] === 'min';
+        const fileNameVersion = file[1];
+        const fileContentVersion = content.match(/v(\d(?:\.\d){0,3})/) ? content.match(/v(\d(?:\.\d){0,3})/)[1] : '';
+        if (fileNameVersion !== fileContentVersion) {
+          // Do something proper here
+          sendAnnouncement('Mismatched versions in jQuery file.');
+        } else {
+          // Check against a CDN with an offical version
+        }
       }
     }
   };
