@@ -1,36 +1,7 @@
+import tabData from './classes/TabData';
+import { log } from './utils/common';
+
 const MIN_INPUT_SIZE = 3;
-/* tabId: {
- *   inputs: [{id: string, name: string, value: string}]
- *   url: string
- *   mismatchingScripts: [string]
- * }
- */
-const tabData = {};
-
-function initTabData(tabId) {
-  tabData[tabId] = {
-    inputs: [],
-    url: '',
-    mismatchingScripts: [],
-  };
-}
-
-function safeUpdateTabData(tabId, data) {
-  if (!tabData[tabId]) {
-    initTabData(tabId);
-  }
-  tabData[tabId] = {
-    ...tabData[tabId],
-    ...data,
-  };
-}
-
-function safeGetTabData(tabId, field) {
-  if (!tabData[tabId]) {
-    initTabData(tabId);
-  }
-  return tabData[tabId][field];
-}
 
 function sendAnnouncement(tabId, message) {
   chrome.tabs.sendMessage(tabId, {
@@ -98,12 +69,11 @@ function compareScriptContent(tabId, src, content) {
   xhr.open('get', src, true);
   xhr.send();
 
-  xhr.onreadystatechange = function () {
-    if (this.readyState === this.DONE && content !== xhr.response) {
-      if (safeGetTabData(tabId, 'mismatchingScripts').indexOf(src) === -1) {
-        safeUpdateTabData(tabId, {
-          mismatchingScripts: [...safeGetTabData(tabId, 'mismatchingScripts'), src],
-        });
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === xhr.DONE && content !== xhr.response) {
+      if (tabData.get(tabId, 'mismatchingScripts').indexOf(src) === -1) {
+        tabData.set(tabId, 'mismatchingScripts',
+          [...tabData.get(tabId, 'mismatchingScripts'), src]);
       }
     }
   };
@@ -113,62 +83,82 @@ chrome.runtime.onMessage.addListener(
   (request, sender) => {
     switch (request.type) {
       case 'sendInputValues':
-        safeUpdateTabData(sender.tab.id, {
-          inputs: request.data.filter(input => input.value.length > MIN_INPUT_SIZE),
-        });
+        tabData.set(sender.tab.id, 'inputs',
+          request.data.filter(input => input.value.length > MIN_INPUT_SIZE));
         break;
       case 'sendURL':
-        safeUpdateTabData(sender.tab.id, { url: request.data });
+        tabData.set(sender.tab.id, 'url', request.data);
         break;
       case 'sendScriptContent':
         compareScriptContent(sender.tab.id, request.data.src, request.data.content);
         break;
-      case 'initTab':
-        initTabData(sender.tab.id);
-        break;
       default:
-        console.log(`Unknown message: ${request.type}`);
+        log(`Unknown message: ${request.type}`);
     }
   },
 );
 
-chrome.webRequest.onBeforeRequest.addListener((details) => {
+chrome.webRequest.onBeforeRequest.addListener(({
+  tabId,
+  initiator,
+  url,
+  requestBody,
+  type,
+}) => {
   // Whitelist all requests from non-tab pages or this extension
-  if (details.tabId < 0 || details.initiator === `chrome-extension://${chrome.runtime.id}`) {
-    return { cancel: false };
-  }
-  // Whitelist all requests going to the same hostname or requests from extensions
-  if (safeGetTabData(details.tabId, 'url')
-    && new URL(details.url).hostname === new URL(safeGetTabData(details.tabId, 'url')).hostname) {
+  if (tabId <= 0 || initiator === `chrome-extension://${chrome.runtime.id}`) {
     return { cancel: false };
   }
 
-  chrome.tabs.sendMessage(details.tabId, {
+  if (!tabData.get(tabId)) {
+    log(`Tab ${tabId} doesn't exist.`);
+    if (type === 'main_frame') {
+      log(`Tab ${tabId} is a main frame. Creating...`);
+      tabData.create(tabId, url);
+    } else {
+      tabData.create(tabId);
+    }
+  }
+
+  // Whitelist all requests going to the same hostname or requests from extensions
+  if (tabData.get(tabId, 'url')
+    && new URL(url).hostname === new URL(tabData.get(tabId, 'url')).hostname) {
+    return { cancel: false };
+  }
+
+  chrome.tabs.sendMessage(tabId, {
     type: 'requestScriptContent',
-    data: { url: details.url },
+    data: { url },
   });
 
-  let shouldCancel = containsInputsInURL(tabData[details.tabId].inputs, details.url);
-  if (details.requestBody) {
-    shouldCancel = shouldCancel || containsInputsInPostData(tabData[details.tabId].inputs,
-      details.requestBody);
+  if (containsInputsInURL(tabData.get(tabId, 'inputs'), url)) {
+    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
+    return { cancel: true };
   }
-  if (safeGetTabData(details.tabId, 'mismatchingScripts').map(url => new URL(url).hostname)
-    .indexOf(new URL(details.url).hostname) !== -1) {
-    shouldCancel = true;
+
+  if (requestBody && containsInputsInPostData(tabData.get(tabId, 'inputs'), requestBody)) {
+    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
+    return { cancel: true };
   }
-  if (shouldCancel) {
-    sendAnnouncement(details.tabId, 'Request cancelled because user credentials were detected.');
+
+  if (tabData.get(tabId, 'mismatchingScripts').map(u => new URL(u).hostname)
+    .indexOf(new URL(url).hostname) !== -1) {
+    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
+    return { cancel: true };
   }
-  return { cancel: shouldCancel };
+
+  return { cancel: false };
 },
 {
   urls: ['<all_urls>'],
-  types: ['sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping',
-    'media', 'websocket', 'other'],
+  types: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object',
+    'xmlhttprequest', 'ping', 'media', 'websocket', 'other'],
 },
 ['blocking', 'requestBody']);
 
+// TODO Move this to use webNavigation
 // Update tab dictionary on creation & destruction
-chrome.tabs.onCreated.addListener(({ id }) => { tabData[id] = { inputs: [], url: '', mismatchingScripts: [] }; });
-chrome.tabs.onRemoved.addListener(tabId => delete tabData[tabId]);
+// chrome.tabs.onCreated.addListener(({ id }) => {
+//   tabData.create(id, '');
+// });
+chrome.tabs.onRemoved.addListener(tabId => tabData.remove(tabId));

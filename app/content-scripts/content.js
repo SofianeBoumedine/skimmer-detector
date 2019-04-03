@@ -1,6 +1,4 @@
-function log(...messages) {
-  console.log('[SkimmerDetector] ', ...messages);
-}
+import { log } from '../../src/utils/common';
 
 function getPopulatedInputValues() {
   return [...document.querySelectorAll('input, textarea')].map(input => ({
@@ -36,4 +34,5 @@ chrome.runtime.onMessage.addListener(
 // bubbled up)
 document.body.addEventListener('input', () => sendInputValues());
 // On page load, send new data
+// TODO: Change this to be done using webNavigation (e.g. onBeforeNavigate/onCompleted)
 sendInputValues();

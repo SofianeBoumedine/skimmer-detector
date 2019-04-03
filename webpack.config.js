@@ -20,7 +20,7 @@ module.exports = {
     content: [`${CONTENT_SCRIPTS_DIR}/content.js`],
     content_before: [`${CONTENT_SCRIPTS_DIR}/content_before.js`],
   },
-  devtool: 'none',
+  devtool: 'source-map',
   performance: { hints: false },
   output: {
     filename: '[name].js',

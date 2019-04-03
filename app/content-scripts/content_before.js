@@ -1,17 +1,4 @@
-function log(...messages) {
-  console.log('[SkimmerDetector] ', ...messages);
-}
-
-function initTab() {
-  chrome.runtime.sendMessage({ type: 'initTab' });
-}
-
-function sendURL() {
-  chrome.runtime.sendMessage({
-    type: 'sendURL',
-    data: window.location.href,
-  });
-}
+import { log } from '../../src/utils/common';
 
 function sendScriptContent(src, content) {
   chrome.runtime.sendMessage({
@@ -25,8 +12,8 @@ function getScriptContent(src) {
   xhr.open('get', src, true);
   xhr.send();
 
-  xhr.onreadystatechange = function () {
-    if (this.readyState === this.DONE) {
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === xhr.DONE) {
       sendScriptContent(src, xhr.response);
     }
   };
@@ -43,8 +30,3 @@ chrome.runtime.onMessage.addListener(
     }
   },
 );
-
-// Remove information about scripts on the previous page when the user navigates elsewhere.
-initTab();
-// Update page with the new URL
-sendURL();
