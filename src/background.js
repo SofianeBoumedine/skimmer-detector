@@ -1,27 +1,9 @@
 import tabData from './classes/TabData';
 import { log } from './utils/common';
-import { atLeastOneNeedleInHaystack, sendAnnouncement } from './utils/utils';
+import EventHandlers from './classes/EventHandlers';
 
 const MIN_INPUT_SIZE = 3;
-
-function containsInputsInURL(inputs, url) {
-  return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
-    [...new URL(url).searchParams.values()]);
-}
-
-function containsInputsInPostData(inputs, requestBody) {
-  const inputVals = inputs.map(input => input.value);
-  if (!requestBody.raw) {
-    if (requestBody.formData) {
-      return atLeastOneNeedleInHaystack(inputVals,
-        Object.values(requestBody.formData).flat());
-    }
-    return false;
-  }
-  return atLeastOneNeedleInHaystack(inputVals,
-    [decodeURIComponent(String.fromCharCode.apply(null,
-      new Uint8Array(requestBody.raw[0].bytes)))]);
-}
+const events = new EventHandlers();
 
 function compareScriptContent(tabId, src, content) {
   const xhr = new XMLHttpRequest();
@@ -57,62 +39,18 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-chrome.webRequest.onBeforeRequest.addListener(({
-  tabId,
-  initiator,
-  url,
-  requestBody,
-  type,
-}) => {
-  // Whitelist all requests from non-tab pages or this extension
-  if (tabId <= 0 || initiator === `chrome-extension://${chrome.runtime.id}`) {
-    return { cancel: false };
-  }
+function initialiseEventListeners() {
+  chrome.webRequest.onBeforeRequest.addListener(events.onBeforeRequest.bind(events), {
+    urls: ['<all_urls>'],
+    types: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object',
+      'xmlhttprequest', 'ping', 'media', 'websocket', 'other'],
+  }, ['blocking', 'requestBody']);
 
-  if (!tabData.get(tabId)) {
-    log(`Tab ${tabId} doesn't exist.`);
-    if (type === 'main_frame') {
-      log(`Tab ${tabId} is a main frame. Creating...`);
-      tabData.create(tabId, url);
-    } else {
-      tabData.create(tabId);
-    }
-  }
+  chrome.tabs.onRemoved.addListener(events.onTabRemoved.bind(events));
+}
 
-  // Whitelist all requests going to the same hostname or requests from extensions
-  if (tabData.get(tabId, 'url')
-    && new URL(url).hostname === new URL(tabData.get(tabId, 'url')).hostname) {
-    return { cancel: false };
-  }
+function init() {
+  initialiseEventListeners();
+}
 
-  chrome.tabs.sendMessage(tabId, {
-    type: 'requestScriptContent',
-    data: { url },
-  });
-
-  if (containsInputsInURL(tabData.get(tabId, 'inputs'), url)) {
-    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
-    return { cancel: true };
-  }
-
-  if (requestBody && containsInputsInPostData(tabData.get(tabId, 'inputs'), requestBody)) {
-    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
-    return { cancel: true };
-  }
-
-  if (tabData.get(tabId, 'mismatchingScripts').map(u => new URL(u).hostname)
-    .indexOf(new URL(url).hostname) !== -1) {
-    sendAnnouncement(tabId, 'Request cancelled because user credentials were detected.');
-    return { cancel: true };
-  }
-
-  return { cancel: false };
-},
-{
-  urls: ['<all_urls>'],
-  types: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object',
-    'xmlhttprequest', 'ping', 'media', 'websocket', 'other'],
-},
-['blocking', 'requestBody']);
-
-chrome.tabs.onRemoved.addListener(tabId => tabData.remove(tabId));
+init();

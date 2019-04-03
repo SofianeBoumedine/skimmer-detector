@@ -1,3 +1,5 @@
+import { sendMessage } from './common';
+
 /**
  * Attempts to identify where a string is base-64 encoded or not.
  * @param string The raw string to be examined.
@@ -30,8 +32,5 @@ export function atLeastOneNeedleInHaystack(needles, haystacks) {
 }
 
 export function sendAnnouncement(tabId, message) {
-  chrome.tabs.sendMessage(tabId, {
-    type: 'sendAnnouncement',
-    data: message,
-  });
+  sendMessage('sendAnnouncement', { message }, tabId);
 }

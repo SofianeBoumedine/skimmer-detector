@@ -1,11 +1,4 @@
-import { log } from '../../src/utils/common';
-
-function sendScriptContent(src, content) {
-  chrome.runtime.sendMessage({
-    type: 'sendScriptContent',
-    data: { src, content },
-  });
-}
+import { log, sendMessage } from '../../src/utils/common';
 
 function getScriptContent(src) {
   const xhr = new XMLHttpRequest();
@@ -14,7 +7,7 @@ function getScriptContent(src) {
 
   xhr.onreadystatechange = () => {
     if (xhr.readyState === xhr.DONE) {
-      sendScriptContent(src, xhr.response);
+      sendMessage('sendScriptContent', { src, content: xhr.response });
     }
   };
 }
@@ -29,10 +22,7 @@ function getPopulatedInputValues() {
 }
 
 function sendInputValues() {
-  chrome.runtime.sendMessage({
-    type: 'sendInputValues',
-    data: getPopulatedInputValues(),
-  });
+  sendMessage('sendInputValues', getPopulatedInputValues());
 }
 
 let num = 0;
