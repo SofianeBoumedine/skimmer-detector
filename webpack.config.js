@@ -18,7 +18,6 @@ module.exports = {
   entry: {
     background: [`${SRC_DIR}/background.js`],
     content: [`${CONTENT_SCRIPTS_DIR}/content.js`],
-    content_before: [`${CONTENT_SCRIPTS_DIR}/content_before.js`],
   },
   devtool: 'source-map',
   performance: { hints: false },

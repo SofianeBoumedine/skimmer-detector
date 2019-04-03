@@ -16,6 +16,7 @@
         "activeTab",
         "webRequest",
         "webRequestBlocking",
+        "webNavigation",
         "http://*/*",
         "file://*/*",
         "https://*/*"
@@ -46,17 +47,6 @@
                 "http://*/*",
                 "https://*/*"
             ]
-        },
-        {
-            "all_frames": false,
-            "js": [
-                "dist/content_before.js"
-            ],
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
-            "run_at": "document_start"
         }
     ],
 

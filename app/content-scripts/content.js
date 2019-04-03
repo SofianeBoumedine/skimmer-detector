@@ -1,5 +1,25 @@
 import { log } from '../../src/utils/common';
 
+function sendScriptContent(src, content) {
+  chrome.runtime.sendMessage({
+    type: 'sendScriptContent',
+    data: { src, content },
+  });
+}
+
+function getScriptContent(src) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('get', src, true);
+  xhr.send();
+
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === xhr.DONE) {
+      sendScriptContent(src, xhr.response);
+    }
+  };
+}
+
+
 function getPopulatedInputValues() {
   return [...document.querySelectorAll('input, textarea')].map(input => ({
     id: input.id || '',
@@ -20,6 +40,9 @@ let num = 0;
 chrome.runtime.onMessage.addListener(
   (request) => {
     switch (request.type) {
+      case 'requestScriptContent':
+        getScriptContent(request.data.url);
+        break;
       case 'sendAnnouncement':
         document.body.insertAdjacentHTML('beforeend', `<div style="position: fixed;top:${num * 14}px;right:0;width: 20%;background:black;color:white;font:12px sans-serif;z-index:9999;">${request.data}</div>`);
         num += 1;

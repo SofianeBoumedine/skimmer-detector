@@ -1,50 +1,8 @@
 import tabData from './classes/TabData';
 import { log } from './utils/common';
+import { atLeastOneNeedleInHaystack, sendAnnouncement } from './utils/utils';
 
 const MIN_INPUT_SIZE = 3;
-
-function sendAnnouncement(tabId, message) {
-  chrome.tabs.sendMessage(tabId, {
-    type: 'sendAnnouncement',
-    data: message,
-  });
-}
-
-
-/**
- * Attempts to identify where a string is base-64 encoded or not.
- * @param string The raw string to be examined.
- * @returns {boolean} Returns true if the string matches a base-64 string. False otherwise.
- */
-function isBase64Encoded(string) {
-  return /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(string);
-}
-
-// function getFilename(url) {
-//   return url.split('/').pop().split('#')[0].split('?')[0];
-// }
-
-/**
- * Determines whether one or more elements in needles are present in any of the haystacks.
- * Checks both raw input and base64 encoded versions of the needles.
- * @param needles The array of needles needed to be checked.
- * @param haystacks The array of haystacks in which the needle(s) may reside.
- * @returns {boolean} Whether one or more needles were found in one or more haystacks in either
- * raw or base64 encoded form.
- */
-function atLeastOneNeedleInHaystack(needles, haystacks) {
-  if (!needles || !haystacks) {
-    return false;
-  }
-  return haystacks.some(haystackElem => needles.some((needle) => {
-    if (isBase64Encoded(haystackElem)) {
-      if (atob(haystackElem).indexOf(needle) !== -1) {
-        return true;
-      }
-    }
-    return haystackElem.indexOf(needle) !== -1;
-  }));
-}
 
 function containsInputsInURL(inputs, url) {
   return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
@@ -52,16 +10,17 @@ function containsInputsInURL(inputs, url) {
 }
 
 function containsInputsInPostData(inputs, requestBody) {
-  if (requestBody.raw) {
-    return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
-      [decodeURIComponent(String.fromCharCode.apply(null,
-        new Uint8Array(requestBody.raw[0].bytes)))]);
+  const inputVals = inputs.map(input => input.value);
+  if (!requestBody.raw) {
+    if (requestBody.formData) {
+      return atLeastOneNeedleInHaystack(inputVals,
+        Object.values(requestBody.formData).flat());
+    }
+    return false;
   }
-  if (requestBody.formData) {
-    return atLeastOneNeedleInHaystack(inputs.map(input => input.value),
-      Object.values(requestBody.formData).flat());
-  }
-  return false;
+  return atLeastOneNeedleInHaystack(inputVals,
+    [decodeURIComponent(String.fromCharCode.apply(null,
+      new Uint8Array(requestBody.raw[0].bytes)))]);
 }
 
 function compareScriptContent(tabId, src, content) {
@@ -156,9 +115,4 @@ chrome.webRequest.onBeforeRequest.addListener(({
 },
 ['blocking', 'requestBody']);
 
-// TODO Move this to use webNavigation
-// Update tab dictionary on creation & destruction
-// chrome.tabs.onCreated.addListener(({ id }) => {
-//   tabData.create(id, '');
-// });
 chrome.tabs.onRemoved.addListener(tabId => tabData.remove(tabId));
