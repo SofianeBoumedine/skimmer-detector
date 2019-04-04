@@ -1,4 +1,4 @@
-import { sendMessage } from './common';
+import { sendMessage, log } from './common';
 
 /**
  * Attempts to identify where a string is base-64 encoded or not.
@@ -33,4 +33,17 @@ export function atLeastOneNeedleInHaystack(needles, haystacks) {
 
 export function sendAnnouncement(tabId, message) {
   sendMessage('sendAnnouncement', { message }, tabId);
+}
+
+// Adapted from https://github.com/ghostery/ghostery-extension/blob/master/src/utils/utils.js
+export function fetchLocalJSONResource(url) {
+  return fetch(url).then((response) => {
+    if (!response.ok) {
+      return Promise.reject(new Error(`Failed to fetchLocalJSONResource ${url} with status ${response.status} (${response.statusText})`));
+    }
+    return response.json();
+  }).catch((err) => {
+    log(`fetchLocalJSONResource error: ${err}`);
+    return Promise.reject(new Error(err));
+  });
 }

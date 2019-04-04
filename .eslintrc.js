@@ -17,4 +17,5 @@ module.exports = {
     "no-unused-vars": ["error", { "varsIgnorePattern": "log" }],
     "no-underscore-dangle": ["off"],
   },
+  parser: "babel-eslint",
 };
