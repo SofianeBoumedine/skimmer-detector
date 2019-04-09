@@ -13,7 +13,7 @@ function getScriptContent(src) {
 }
 
 function getPopulatedInputValues() {
-  return [...document.querySelectorAll('input, textarea')].map(input => ({
+  return [...document.querySelectorAll('input:not[type=hidden]), textarea')].map(input => ({
     id: input.id || '',
     name: input.name || '',
     value: input.value || '',
@@ -51,19 +51,3 @@ chrome.runtime.onMessage.addListener(
 document.addEventListener('DOMContentLoaded', () => {
   document.body.addEventListener('input', () => sendInputValues());
 });
-
-// const originalXMLHttpRequest = window.XMLHttpRequest.prototype.send;
-// window.XMLHttpRequest.prototype.send = function (body) {
-//   log('somebody just called a send xhr');
-//   StackTrace.get()
-//     .then((stack) => {
-//       const stringifiedStack = stack.map(function(sf) {
-//         return sf.toString();
-//       }).join('\n');
-//       log('stringified stack', stringifiedStack);
-//     })
-//     .catch((err) =>{
-//       log(err.message);
-//     });
-//   originalXMLHttpRequest.bind(this)(body);
-// };

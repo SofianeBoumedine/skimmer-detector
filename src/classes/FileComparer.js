@@ -25,22 +25,4 @@ class FileComparer {
   }
 }
 
-// function compareScriptContent(tabId, src, content) {
-//   const xhr = new XMLHttpRequest();
-//   xhr.open('get', src, true);
-//   xhr.send();
-//
-//   xhr.onreadystatechange = () => {
-//     if (xhr.readyState === xhr.DONE && content !== xhr.response) {
-//       if (tabData.get(tabId, 'mismatchingScripts').indexOf(src) === -1) {
-//         tabData.set(tabId, 'mismatchingScripts',
-//           [...tabData.get(tabId, 'mismatchingScripts'), src]);
-//       }
-//     }
-//   };
-// }
-
 export default FileComparer;
-
-// const lc = new FileComparer('https://clickycloud.com/jquery-1.9.2.2.min.js')
-// lc.matchesVerifiedLibrary()
