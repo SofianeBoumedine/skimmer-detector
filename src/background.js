@@ -13,6 +13,7 @@ function compareScriptContent(tabId, src, content) {
   xhr.onreadystatechange = () => {
     if (xhr.readyState === xhr.DONE && content !== xhr.response) {
       if (tabData.get(tabId, 'mismatchingScripts').indexOf(src) === -1) {
+        log(`Files did not match for ${src}`);
         tabData.set(tabId, 'mismatchingScripts',
           [...tabData.get(tabId, 'mismatchingScripts'), src]);
       }
@@ -25,10 +26,7 @@ chrome.runtime.onMessage.addListener(
     switch (request.type) {
       case 'sendInputValues':
         tabData.set(sender.tab.id, 'inputs',
-          request.data.filter(input => input.value.length > MIN_INPUT_SIZE));
-        break;
-      case 'sendURL':
-        tabData.set(sender.tab.id, 'url', request.data);
+          request.data.inputs.filter(input => input.value.length > MIN_INPUT_SIZE));
         break;
       case 'sendScriptContent':
         compareScriptContent(sender.tab.id, request.data.src, request.data.content);
@@ -47,6 +45,8 @@ function initialiseEventListeners() {
   }, ['blocking', 'requestBody']);
 
   chrome.tabs.onRemoved.addListener(events.onTabRemoved.bind(events));
+
+  chrome.webNavigation.onCompleted.addListener(events.onTabCompleted.bind(events));
 }
 
 function init() {
@@ -54,3 +54,9 @@ function init() {
 }
 
 init();
+
+
+// Temporary
+chrome.browserAction.onClicked.addListener((tab) => {
+  log(tabData.get(tab.id));
+});

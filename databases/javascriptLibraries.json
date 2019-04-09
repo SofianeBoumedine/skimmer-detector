@@ -1,0 +1,30 @@
+{
+  "jquery": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/jquery/__VERSION__/jquery.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/jquery/__VERSION__/jquery.min.js"
+  },
+  "angular": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/angular.js/__VERSION__/angular.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/angular.js/__VERSION__/angular.min.js"
+  },
+  "bootstrap": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/__VERSION__/js/bootstrap.bundle.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/__VERSION__/js/bootstrap.bundle.min.js"
+  },
+  "modernizr": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/modernizr/__VERSION__/modernizr.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/modernizr/__VERSION__/modernizr.min.js"
+  },
+  "d3": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/d3/__VERSION__/d3.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/d3/__VERSION__/d3.min.js"
+  },
+  "hammer": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/hammer.js/__VERSION__/hammer.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/hammer.js/__VERSION__/hammer.min.js"
+  },
+  "jqueryui": {
+    "regular": "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/__VERSION__/jquery-ui.js",
+    "min": "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/__VERSION__/jquery-ui.min.js"
+  }
+}

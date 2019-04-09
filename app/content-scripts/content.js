@@ -12,7 +12,6 @@ function getScriptContent(src) {
   };
 }
 
-
 function getPopulatedInputValues() {
   return [...document.querySelectorAll('input, textarea')].map(input => ({
     id: input.id || '',
@@ -22,7 +21,7 @@ function getPopulatedInputValues() {
 }
 
 function sendInputValues() {
-  sendMessage('sendInputValues', getPopulatedInputValues());
+  sendMessage('sendInputValues', { inputs: getPopulatedInputValues() });
 }
 
 let num = 0;
@@ -31,10 +30,14 @@ chrome.runtime.onMessage.addListener(
   (request) => {
     switch (request.type) {
       case 'requestScriptContent':
+        log(`Received a request to compare ${request.data.url}`);
         getScriptContent(request.data.url);
         break;
+      case 'requestInputValues':
+        sendInputValues();
+        break;
       case 'sendAnnouncement':
-        document.body.insertAdjacentHTML('beforeend', `<div style="position: fixed;top:${num * 14}px;right:0;width: 20%;background:black;color:white;font:12px sans-serif;z-index:9999;">${request.data}</div>`);
+        document.body.insertAdjacentHTML('beforeend', `<div style="position: fixed;top:${num * 14}px;right:0;width: 20%;background:black;color:white;font:12px sans-serif;z-index:9999;">${request.data.message}</div>`);
         num += 1;
         break;
       default:
@@ -45,7 +48,22 @@ chrome.runtime.onMessage.addListener(
 
 // Bind the body to send updates to any page inputs when they're modified (input events are
 // bubbled up)
-document.body.addEventListener('input', () => sendInputValues());
-// On page load, send new data
-// TODO: Change this to be done using webNavigation (e.g. onBeforeNavigate/onCompleted)
-sendInputValues();
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('input', () => sendInputValues());
+});
+
+// const originalXMLHttpRequest = window.XMLHttpRequest.prototype.send;
+// window.XMLHttpRequest.prototype.send = function (body) {
+//   log('somebody just called a send xhr');
+//   StackTrace.get()
+//     .then((stack) => {
+//       const stringifiedStack = stack.map(function(sf) {
+//         return sf.toString();
+//       }).join('\n');
+//       log('stringified stack', stringifiedStack);
+//     })
+//     .catch((err) =>{
+//       log(err.message);
+//     });
+//   originalXMLHttpRequest.bind(this)(body);
+// };

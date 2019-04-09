@@ -1,3 +1,4 @@
+import parseDomain from 'parse-domain';
 import { sendMessage, log } from './common';
 
 /**
@@ -46,4 +47,9 @@ export function fetchLocalJSONResource(url) {
     log(`fetchLocalJSONResource error: ${err}`);
     return Promise.reject(new Error(err));
   });
+}
+
+export function getDomainAndTld(url) {
+  const { domain, tld } = parseDomain(url);
+  return `${domain}.${tld}`;
 }
