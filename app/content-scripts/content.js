@@ -13,7 +13,7 @@ function getScriptContent(src) {
 }
 
 function getPopulatedInputValues() {
-  return [...document.querySelectorAll('input:not[type=hidden]), textarea')].map(input => ({
+  return [...document.querySelectorAll('input:not([type=hidden]), textarea')].map(input => ({
     id: input.id || '',
     name: input.name || '',
     value: input.value || '',
@@ -51,3 +51,18 @@ chrome.runtime.onMessage.addListener(
 document.addEventListener('DOMContentLoaded', () => {
   document.body.addEventListener('input', () => sendInputValues());
 });
+
+
+log(`Start: ${document.location}`);
+
+const s = document.createElement('script');
+s.textContent = 'console.log("Inject-before-DOM")';
+(document.head || document.documentElement).appendChild(s);
+s.remove();
+
+const t = document.createElement('script');
+t.src = chrome.runtime.getURL('dist/injected.js'); // this may end up executing after end.js
+t.onload = function () {
+  this.remove();
+};
+(document.head || document.documentElement).appendChild(t);

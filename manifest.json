@@ -52,5 +52,10 @@
         }
     ],
 
+    "web_accessible_resources": [
+        "dist/injected.js",
+        "dist/injected.js.map"
+    ],
+
     "log": true
 }

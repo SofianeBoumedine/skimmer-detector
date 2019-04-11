@@ -18,6 +18,7 @@ module.exports = {
   entry: {
     background: [`${SRC_DIR}/background.js`],
     content: [`${CONTENT_SCRIPTS_DIR}/content.js`],
+    injected: [`${CONTENT_SCRIPTS_DIR}/injected.js`],
   },
   devtool: 'source-map',
   performance: { hints: false },

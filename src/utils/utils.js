@@ -50,6 +50,9 @@ export function fetchLocalJSONResource(url) {
 }
 
 export function getDomainAndTld(url) {
+  if (!url) {
+    return '';
+  }
   const { domain, tld } = parseDomain(url);
   return `${domain}.${tld}`;
 }
